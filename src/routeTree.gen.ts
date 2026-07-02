@@ -9,8 +9,56 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerificationRouteImport } from './routes/verification'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OfferRideRouteImport } from './routes/offer-ride'
+import { Route as FindRideRouteImport } from './routes/find-ride'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as BookingsRouteImport } from './routes/bookings'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const VerificationRoute = VerificationRouteImport.update({
+  id: '/verification',
+  path: '/verification',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfferRideRoute = OfferRideRouteImport.update({
+  id: '/offer-ride',
+  path: '/offer-ride',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FindRideRoute = FindRideRouteImport.update({
+  id: '/find-ride',
+  path: '/find-ride',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BookingsRoute = BookingsRouteImport.update({
+  id: '/bookings',
+  path: '/bookings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +67,144 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/bookings': typeof BookingsRoute
+  '/dashboard': typeof DashboardRoute
+  '/find-ride': typeof FindRideRoute
+  '/offer-ride': typeof OfferRideRoute
+  '/profile': typeof ProfileRoute
+  '/verification': typeof VerificationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/bookings': typeof BookingsRoute
+  '/dashboard': typeof DashboardRoute
+  '/find-ride': typeof FindRideRoute
+  '/offer-ride': typeof OfferRideRoute
+  '/profile': typeof ProfileRoute
+  '/verification': typeof VerificationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
+  '/bookings': typeof BookingsRoute
+  '/dashboard': typeof DashboardRoute
+  '/find-ride': typeof FindRideRoute
+  '/offer-ride': typeof OfferRideRoute
+  '/profile': typeof ProfileRoute
+  '/verification': typeof VerificationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/bookings'
+    | '/dashboard'
+    | '/find-ride'
+    | '/offer-ride'
+    | '/profile'
+    | '/verification'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/bookings'
+    | '/dashboard'
+    | '/find-ride'
+    | '/offer-ride'
+    | '/profile'
+    | '/verification'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/auth'
+    | '/bookings'
+    | '/dashboard'
+    | '/find-ride'
+    | '/offer-ride'
+    | '/profile'
+    | '/verification'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  AuthRoute: typeof AuthRoute
+  BookingsRoute: typeof BookingsRoute
+  DashboardRoute: typeof DashboardRoute
+  FindRideRoute: typeof FindRideRoute
+  OfferRideRoute: typeof OfferRideRoute
+  ProfileRoute: typeof ProfileRoute
+  VerificationRoute: typeof VerificationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verification': {
+      id: '/verification'
+      path: '/verification'
+      fullPath: '/verification'
+      preLoaderRoute: typeof VerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offer-ride': {
+      id: '/offer-ride'
+      path: '/offer-ride'
+      fullPath: '/offer-ride'
+      preLoaderRoute: typeof OfferRideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/find-ride': {
+      id: '/find-ride'
+      path: '/find-ride'
+      fullPath: '/find-ride'
+      preLoaderRoute: typeof FindRideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bookings': {
+      id: '/bookings'
+      path: '/bookings'
+      fullPath: '/bookings'
+      preLoaderRoute: typeof BookingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,17 +217,15 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  AuthRoute: AuthRoute,
+  BookingsRoute: BookingsRoute,
+  DashboardRoute: DashboardRoute,
+  FindRideRoute: FindRideRoute,
+  OfferRideRoute: OfferRideRoute,
+  ProfileRoute: ProfileRoute,
+  VerificationRoute: VerificationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
