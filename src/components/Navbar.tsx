@@ -74,9 +74,11 @@ export function Navbar() {
                 <DropdownMenuItem asChild>
                   <Link to="/profile"><UserIcon className="mr-2 h-4 w-4" />Profile</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/admin"><Car className="mr-2 h-4 w-4" />Admin</Link>
-                </DropdownMenuItem>
+                {user.role === "ADMIN" && (
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin"><Car className="mr-2 h-4 w-4" />Admin</Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />Log out
@@ -115,7 +117,9 @@ export function Navbar() {
                 {user && (
                   <>
                     <Link to="/profile" onClick={() => setOpen(false)} className="rounded-lg px-3 py-3 text-base font-medium hover:bg-muted">Profile</Link>
-                    <Link to="/admin" onClick={() => setOpen(false)} className="rounded-lg px-3 py-3 text-base font-medium hover:bg-muted">Admin</Link>
+                    {user.role === "ADMIN" && (
+                      <Link to="/admin" onClick={() => setOpen(false)} className="rounded-lg px-3 py-3 text-base font-medium hover:bg-muted">Admin</Link>
+                    )}
                   </>
                 )}
               </div>

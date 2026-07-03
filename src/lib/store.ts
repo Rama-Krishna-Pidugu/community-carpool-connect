@@ -22,6 +22,7 @@ export type User = {
   rating: number;
   ridesTaken: number;
   ridesOffered: number;
+  role: "USER" | "ADMIN";
 };
 
 type State = {
@@ -33,6 +34,7 @@ type State = {
   logout: () => void;
   register: (name: string, email: string, password?: string, phone?: string) => Promise<void>;
   confirmOTP: (email: string, otp: string) => Promise<void>;
+  refreshProfile: () => Promise<void>;
   updateProfile: (patch: Partial<User>) => void;
   bookRide: (ride: Ride) => void;
   cancelBooking: (bookingId: string) => void;
@@ -48,13 +50,14 @@ const defaultUser: User = {
   id: "u1",
   name: "Alex Morgan",
   email: "alex@neighbourly.app",
-  phone: "+91 98000 12345",
-  avatar: "https://i.pravatar.cc/160?img=13",
+  phone: "",
+  avatar: "",
   joinedAt: "2026-01-12",
   driverStatus: "none",
   rating: 4.8,
   ridesTaken: 24,
   ridesOffered: 0,
+  role: "USER",
 };
 
 import { apiFetch, apiLogin } from "./api";
@@ -79,9 +82,9 @@ export const useAppStore = create<State>()(
           // Fetch profile
           const profile = await apiFetch("/users/me").catch(() => null);
           if (profile) {
-            set({ user: { ...defaultUser, ...profile, name: profile.full_name } });
+            set({ user: { ...defaultUser, ...profile, name: profile.full_name, phone: profile.phone_number || "", avatar: profile.avatar_url || "", driverStatus: profile.driver_status || "none" } });
           } else {
-            set({ user: { ...defaultUser, email } }); // Fallback for dev
+            set({ user: { ...defaultUser, email, phone: "" } }); // Fallback for dev
           }
         } catch (e) {
           throw e;
@@ -116,6 +119,16 @@ export const useAppStore = create<State>()(
           });
         } catch (e) {
           throw e;
+        }
+      },
+      refreshProfile: async () => {
+        try {
+          const profile = await apiFetch("/users/me").catch(() => null);
+          if (profile) {
+            set({ user: { ...defaultUser, ...profile, name: profile.full_name, phone: profile.phone_number || "", avatar: profile.avatar_url || "", driverStatus: profile.driver_status || "none" } });
+          }
+        } catch (e) {
+          // Ignore
         }
       },
       updateProfile: (patch) =>

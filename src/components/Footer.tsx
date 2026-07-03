@@ -1,8 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Car, Github, Twitter } from "lucide-react";
+import { useAppStore } from "@/lib/store";
 
 export function Footer() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const user = useAppStore((s) => s.user);
   if (pathname === "/auth") return null;
 
   return (
@@ -26,7 +28,9 @@ export function Footer() {
             <li><Link to="/find-ride" className="hover:text-foreground">Find a ride</Link></li>
             <li><Link to="/offer-ride" className="hover:text-foreground">Offer a ride</Link></li>
             <li><Link to="/bookings" className="hover:text-foreground">My bookings</Link></li>
-            <li><Link to="/admin" className="hover:text-foreground">Admin dashboard</Link></li>
+            {user?.role === "ADMIN" && (
+              <li><Link to="/admin" className="hover:text-foreground">Admin dashboard</Link></li>
+            )}
           </ul>
         </div>
 

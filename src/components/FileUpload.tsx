@@ -8,18 +8,20 @@ export function FileUpload({
   value,
   onChange,
   optional,
+  capture,
 }: {
   label: string;
   value?: string;
-  onChange: (dataUrl: string | undefined) => void;
+  onChange: (dataUrl: string | undefined, file?: File) => void;
   optional?: boolean;
+  capture?: "user" | "environment";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
   const handleFile = (file: File) => {
     const reader = new FileReader();
-    reader.onload = () => onChange(reader.result as string);
+    reader.onload = () => onChange(reader.result as string, file);
     reader.readAsDataURL(file);
   };
 
@@ -70,6 +72,7 @@ export function FileUpload({
         ref={inputRef}
         type="file"
         accept="image/*"
+        capture={capture}
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];

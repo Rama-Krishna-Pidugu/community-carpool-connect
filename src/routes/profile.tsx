@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,15 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
   const user = useAppStore((s) => s.user);
   const updateProfile = useAppStore((s) => s.updateProfile);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const bookings = useAppStore((s) => s.bookings);
   const navigate = useNavigate();
   const [edit, setEdit] = useState(false);
   const [form, setForm] = useState({ name: user?.name ?? "", email: user?.email ?? "", phone: user?.phone ?? "" });
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   if (!user) { navigate({ to: "/auth" }); return null; }
 

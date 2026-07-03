@@ -15,12 +15,17 @@ export const Route = createFileRoute("/dashboard")({
 
 function Dashboard() {
   const user = useAppStore((s) => s.user);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const bookings = useAppStore((s) => s.bookings);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user) navigate({ to: "/auth" });
-  }, [user, navigate]);
+    if (!user) {
+      navigate({ to: "/auth" });
+    } else {
+      refreshProfile();
+    }
+  }, [user, navigate, refreshProfile]);
 
   if (!user) return null;
 

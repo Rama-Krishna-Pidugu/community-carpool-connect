@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, BadgeCheck, Car, FileCheck, IdCard, ShieldCheck, Users, Clock, Calendar, MapPin } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import verifiedImg from "@/assets/verified-driver.png";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/offer-ride")({
   head: () => ({ meta: [{ title: "Offer a Ride — Neighbourly" }, { name: "description", content: "Offer empty seats to verified neighbours and help build a greener community." }] }),
@@ -128,22 +129,144 @@ function BecomeDriver({ status }: { status: "none" | "pending" | "rejected" }) {
     </div>
   );
 }
-
 function OfferForm() {
-  const publishRide = useAppStore((s) => s.publishRide);
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    pickup: "", destination: "", date: "", time: "",
-    vehicle: "", seats: 3, price: 60,
-  });
-  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdRide, setCreatedRide] = useState<any>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const [form, setForm] = useState({
+    pickup: "",
+    destination: "",
+    date: "",
+    time: "",
+    vehicle: "",
+    seats: 3,
+    price: 60,
+  });
+
+  useEffect(() => {
+    apiFetch("/driver/vehicles")
+      .then((data: any) => {
+        setVehicles(data);
+        if (data.length > 0) {
+          setForm((f) => ({ ...f, vehicle: data[0].vehicle_id }));
+        }
+      })
+      .catch(() => {
+        toast.error("Failed to load registered vehicles");
+      });
+  }, []);
+
+  const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const selectedVehicle = vehicles.find((v) => v.vehicle_id === form.vehicle);
+  const maxSeats = selectedVehicle ? selectedVehicle.capacity : 6;
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    publishRide(form);
-    toast.success("Ride published!");
-    navigate({ to: "/bookings" });
+    if (!form.vehicle) {
+      toast.error("Please select a vehicle");
+      return;
+    }
+
+    const departureTime = new Date(`${form.date}T${form.time}`);
+    if (departureTime <= new Date()) {
+      toast.error("Departure time must be in the future");
+      return;
+    }
+
+    if (form.seats <= 0 || form.seats > maxSeats) {
+      toast.error(`Seats must be between 1 and ${maxSeats}`);
+      return;
+    }
+
+    if (form.price < 0) {
+      toast.error("Price per seat cannot be negative");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const res = await apiFetch("/rides", {
+        method: "POST",
+        body: JSON.stringify({
+          vehicle_id: form.vehicle,
+          pickup_address: form.pickup,
+          destination_address: form.destination,
+          departure_time: departureTime.toISOString(),
+          available_seats: form.seats,
+          price_per_seat: form.price,
+        }),
+      });
+
+      if (res.success) {
+        toast.success("Ride created successfully!");
+        setCreatedRide(res.ride);
+      } else {
+        toast.error(res.message || "Failed to create ride");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "An error occurred while creating the ride");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (createdRide) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
+        <Card>
+          <CardContent className="space-y-6 p-10 text-center">
+            <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-success/10 text-success">
+              <BadgeCheck className="h-8 w-8" />
+            </span>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-bold text-success">Ride Created Successfully</h1>
+              <p className="text-muted-foreground">Your ride has been scheduled and is now visible to passengers.</p>
+            </div>
+            
+            <div className="rounded-xl border border-border bg-surface p-6 text-left space-y-4">
+              <div className="grid grid-cols-[80px_1fr] gap-2 text-sm">
+                <span className="font-semibold text-muted-foreground">Pickup:</span>
+                <span className="font-medium">{createdRide.pickup_address}</span>
+                
+                <span className="font-semibold text-muted-foreground">Dropoff:</span>
+                <span className="font-medium">{createdRide.destination_address}</span>
+                
+                <span className="font-semibold text-muted-foreground">Departure:</span>
+                <span className="font-medium">
+                  {new Date(createdRide.departure_time).toLocaleString(undefined, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}
+                </span>
+                
+                <span className="font-semibold text-muted-foreground">Seats:</span>
+                <span className="font-medium">{createdRide.available_seats} seats available</span>
+                
+                <span className="font-semibold text-muted-foreground">Price:</span>
+                <span className="font-medium">₹{createdRide.price_per_seat} per seat</span>
+                
+                <span className="font-semibold text-muted-foreground">Status:</span>
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {createdRide.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-2 pt-2">
+              <Button onClick={() => setCreatedRide(null)}>Offer another ride</Button>
+              <Button asChild variant="outline">
+                <Link to="/dashboard">Back to dashboard</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
@@ -155,52 +278,112 @@ function OfferForm() {
         <CardContent className="p-6">
           <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-1">
-              <Label htmlFor="pickup">Pickup</Label>
+              <Label htmlFor="pickup">Pickup Location</Label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary" />
-                <Input id="pickup" required value={form.pickup} onChange={(e) => set("pickup", e.target.value)} className="pl-9" placeholder="Green Park Colony" />
+                <Input
+                  id="pickup"
+                  required
+                  value={form.pickup}
+                  onChange={(e) => set("pickup", e.target.value)}
+                  className="pl-9"
+                  placeholder="VIT-AP University"
+                />
               </div>
             </div>
             <div className="space-y-1.5 sm:col-span-1">
               <Label htmlFor="destination">Destination</Label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
-                <Input id="destination" required value={form.destination} onChange={(e) => set("destination", e.target.value)} className="pl-9" placeholder="Tech Park" />
+                <Input
+                  id="destination"
+                  required
+                  value={form.destination}
+                  onChange={(e) => set("destination", e.target.value)}
+                  className="pl-9"
+                  placeholder="Vijayawada Railway Station"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">Departure Date</Label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="date" type="date" required value={form.date} onChange={(e) => set("date", e.target.value)} className="pl-9" />
+                <Input
+                  id="date"
+                  type="date"
+                  required
+                  value={form.date}
+                  onChange={(e) => set("date", e.target.value)}
+                  className="pl-9"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="time">Time</Label>
+              <Label htmlFor="time">Departure Time</Label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input id="time" type="time" required value={form.time} onChange={(e) => set("time", e.target.value)} className="pl-9" />
+                <Input
+                  id="time"
+                  type="time"
+                  required
+                  value={form.time}
+                  onChange={(e) => set("time", e.target.value)}
+                  className="pl-9"
+                />
               </div>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="vehicle">Vehicle</Label>
-              <Input id="vehicle" required value={form.vehicle} onChange={(e) => set("vehicle", e.target.value)} placeholder="Honda City · White · KA 05 MJ 4421" />
+              {vehicles.length === 0 ? (
+                <div className="text-sm text-destructive font-medium p-2 border border-destructive/20 rounded-md bg-destructive/5">
+                  No registered vehicles found. Please add a vehicle first.
+                </div>
+              ) : (
+                <Select value={form.vehicle} onValueChange={(v) => set("vehicle", v)}>
+                  <SelectTrigger id="vehicle">
+                    <SelectValue placeholder="Select vehicle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.map((v) => (
+                      <SelectItem key={v.vehicle_id} value={v.vehicle_id}>
+                        {v.model} ({v.license_plate}) - Max {v.capacity} seats
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="seats">Available seats</Label>
               <Select value={String(form.seats)} onValueChange={(v) => set("seats", Number(v))}>
-                <SelectTrigger id="seats"><SelectValue /></SelectTrigger>
+                <SelectTrigger id="seats">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {[1, 2, 3, 4, 5, 6].map((n) => <SelectItem key={n} value={String(n)}>{n} seat{n > 1 ? "s" : ""}</SelectItem>)}
+                  {Array.from({ length: maxSeats }, (_, i) => i + 1).map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n} seat{n > 1 ? "s" : ""}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="price">Price per seat (₹)</Label>
-              <Input id="price" type="number" min={0} required value={form.price} onChange={(e) => set("price", Number(e.target.value))} />
+              <Input
+                id="price"
+                type="number"
+                min={0}
+                required
+                value={form.price}
+                onChange={(e) => set("price", Number(e.target.value))}
+              />
             </div>
             <div className="sm:col-span-2">
-              <Button type="submit" size="lg" className="w-full sm:w-auto">Publish ride</Button>
+              <Button type="submit" size="lg" disabled={isSubmitting || vehicles.length === 0} className="w-full sm:w-auto">
+                {isSubmitting ? "Creating..." : "Create Ride"}
+              </Button>
             </div>
           </form>
         </CardContent>
