@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Car, Mail, Lock, User as UserIcon, ArrowLeft } from "lucide-react";
+import { Car, Mail, Lock, User as UserIcon, ArrowLeft, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -26,22 +26,59 @@ function AuthPage() {
   const navigate = useNavigate();
   const login = useAppStore((s) => s.login);
   const register = useAppStore((s) => s.register);
-  const [email, setEmail] = useState("alex@neighbourly.app");
-  const [password, setPassword] = useState("demo1234");
+  const confirmOTP = useAppStore((s) => s.confirmOTP);
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [otp, setOtp] = useState("");
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email);
-    toast.success("Welcome back!");
-    navigate({ to: "/dashboard" });
+    setIsLoading(true);
+    try {
+      await login(email, password);
+      toast.success("Welcome back!");
+      navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to sign in");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    register(name || "New Neighbour", email);
-    toast.success("Account created — welcome!");
-    navigate({ to: "/dashboard" });
+    setIsLoading(true);
+    try {
+      await register(name, email, password);
+      toast.success("Account created. Please check your email for the OTP.");
+      setShowOtpDialog(true);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create account");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await confirmOTP(email, otp);
+      toast.success("Email verified successfully! Logging you in...");
+      setShowOtpDialog(false);
+      // Auto login after confirm
+      await login(email, password);
+      navigate({ to: "/dashboard" });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to verify OTP");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -94,8 +131,9 @@ function AuthPage() {
                     <div className="flex justify-end">
                       <ForgotPasswordDialog />
                     </div>
-                    <Button type="submit" className="w-full">Sign in</Button>
-                    <p className="text-center text-xs text-muted-foreground">Demo mode — any credentials work.</p>
+                    <Button type="submit" disabled={isLoading} className="w-full">
+                      {isLoading ? "Signing in..." : "Sign in"}
+                    </Button>
                   </form>
                 </TabsContent>
 
@@ -124,7 +162,9 @@ function AuthPage() {
                         <Input id="signup-password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="pl-9" />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full">Create account</Button>
+                    <Button type="submit" disabled={isLoading} className="w-full">
+                      {isLoading ? "Creating account..." : "Create account"}
+                    </Button>
                   </form>
                 </TabsContent>
               </Tabs>
@@ -132,6 +172,38 @@ function AuthPage() {
           </Card>
         </div>
       </div>
+
+      <Dialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify your email</DialogTitle>
+            <DialogDescription>
+              We've sent a 6-digit confirmation code to <strong>{email}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVerifyOtp} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="otp">Confirmation Code</Label>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input 
+                  id="otp" 
+                  required 
+                  value={otp} 
+                  onChange={(e) => setOtp(e.target.value)} 
+                  className="pl-9" 
+                  placeholder="123456" 
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Verifying..." : "Verify & Sign in"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

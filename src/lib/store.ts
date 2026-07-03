@@ -29,9 +29,10 @@ type State = {
   rides: Ride[];
   bookings: Booking[];
   verificationQueue: VerificationSubmission[];
-  login: (email: string, name?: string) => void;
+  login: (email: string, password?: string) => Promise<void>;
   logout: () => void;
-  register: (name: string, email: string) => void;
+  register: (name: string, email: string, password?: string, phone?: string) => Promise<void>;
+  confirmOTP: (email: string, otp: string) => Promise<void>;
   updateProfile: (patch: Partial<User>) => void;
   bookRide: (ride: Ride) => void;
   cancelBooking: (bookingId: string) => void;
@@ -56,6 +57,8 @@ const defaultUser: User = {
   ridesOffered: 0,
 };
 
+import { apiFetch, apiLogin } from "./api";
+
 export const useAppStore = create<State>()(
   persist(
     (set, get) => ({
@@ -64,11 +67,57 @@ export const useAppStore = create<State>()(
       bookings: seedBookings,
       verificationQueue: seedVerificationQueue,
 
-      login: (email, name) =>
-        set({ user: { ...defaultUser, email, name: name ?? defaultUser.name } }),
-      logout: () => set({ user: null }),
-      register: (name, email) =>
-        set({ user: { ...defaultUser, name, email, ridesTaken: 0 } }),
+      login: async (email, password) => {
+        try {
+          if (password) {
+            const formData = new URLSearchParams();
+            formData.append("username", email);
+            formData.append("password", password);
+            const data = await apiLogin("/auth/login", formData);
+            localStorage.setItem("access_token", data.access_token);
+          }
+          // Fetch profile
+          const profile = await apiFetch("/users/me").catch(() => null);
+          if (profile) {
+            set({ user: { ...defaultUser, ...profile, name: profile.full_name } });
+          } else {
+            set({ user: { ...defaultUser, email } }); // Fallback for dev
+          }
+        } catch (e) {
+          throw e;
+        }
+      },
+      logout: () => {
+        localStorage.removeItem("access_token");
+        set({ user: null });
+      },
+      register: async (name, email, password, phone) => {
+        try {
+          if (password) {
+            await apiFetch("/auth/register", {
+              method: "POST",
+              body: JSON.stringify({
+                full_name: name,
+                email,
+                password,
+                phone_number: phone || null
+              })
+            });
+          }
+        } catch (e) {
+          throw e;
+        }
+      },
+      confirmOTP: async (email, otp) => {
+        try {
+          await apiFetch("/auth/confirm", {
+            method: "POST",
+            body: JSON.stringify({ email, otp })
+          });
+        } catch (e) {
+          throw e;
+        }
+      },
       updateProfile: (patch) =>
         set((s) => ({ user: s.user ? { ...s.user, ...patch } : s.user })),
 
