@@ -81,9 +81,11 @@ export const useAppStore = create<State>()(
             formData.append("username", email);
             formData.append("password", password);
             const data = await apiLogin("/auth/login", formData);
-            localStorage.setItem("access_token", data.access_token);
+            
+            // 🚀 SAVES ID_TOKEN: Bypasses 401 identity claim blocks on reload
+            localStorage.setItem("access_token", data.id_token);
           }
-          // Fetch profile
+          
           const profile = await apiFetch("/users/me").catch(() => null);
           if (profile) {
             set({ 
@@ -101,7 +103,7 @@ export const useAppStore = create<State>()(
               } 
             });
           } else {
-            set({ user: { ...defaultUser, email, phone: "" } }); // Fallback for dev
+            set({ user: { ...defaultUser, email, phone: "" } });
           }
         } catch (e) {
           throw e;

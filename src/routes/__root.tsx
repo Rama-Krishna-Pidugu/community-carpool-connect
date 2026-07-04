@@ -1,17 +1,14 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"; 
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
   useRouter,
   useRouterState,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Search, Car, Calendar, ShieldAlert } from "lucide-react";
 
-import appCss from "../styles.css?url";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Toaster } from "../components/ui/sonner";
@@ -49,42 +46,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Neighbourly — Share rides with your neighbourhood" },
-      { name: "description", content: "A trusted neighbourhood carpooling platform. Share rides, save money, and build community with verified drivers in your locality." },
-      { name: "author", content: "Neighbourly" },
-      { property: "og:title", content: "Neighbourly — Share rides with your neighbourhood" },
-      { property: "og:description", content: "A trusted neighbourhood carpooling platform. Share rides, save money, and build community with verified drivers in your locality." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Neighbourly — Share rides with your neighbourhood" },
-      { name: "twitter:description", content: "A trusted neighbourhood carpooling platform. Share rides, save money, and build community with verified drivers in your locality." },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head><HeadContent /></head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function BottomNav() {
   const user = useAppStore((s) => s.user);
@@ -165,9 +130,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col bg-background pb-16 md:pb-0">
         <Navbar />
-        <main className="flex-1">
+        <div className="flex-1">
           <Outlet />
-        </main>
+        </div>
         <BottomNav />
         <Footer />
         <Toaster />

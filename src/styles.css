@@ -1,8 +1,13 @@
+/* 1. All @import statements MUST be grouped at the absolute top */
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
 @import "@fontsource-variable/inter";
 
+/* 2. All other custom engine directives come AFTER the imports */
+@source "../src";
+@custom-variant dark (&:is(.dark *));
+
+/* 3. Your custom utility styles or shadcn themes follow below... */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
