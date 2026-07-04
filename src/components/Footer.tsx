@@ -5,7 +5,7 @@ import { useAppStore } from "@/lib/store";
 export function Footer() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const user = useAppStore((s) => s.user);
-  if (pathname === "/auth") return null;
+  if (pathname === "/auth" || pathname.startsWith("/admin")) return null;
 
   return (
     <footer className="mt-24 border-t border-border/60 bg-surface">
