@@ -22,6 +22,8 @@ export type User = {
   rating: number;
   ridesTaken: number;
   ridesOffered: number;
+  moneySaved: number;
+  co2Saved: number;
   role: "USER" | "ADMIN";
 };
 
@@ -36,7 +38,7 @@ type State = {
   confirmOTP: (email: string, otp: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (patch: Partial<User>) => void;
-  bookRide: (ride: Ride) => void;
+  bookRide: (ride: Ride, couponCode?: string) => Promise<void>;
   cancelBooking: (bookingId: string) => void;
   publishRide: (
     ride: Omit<Ride, "id" | "driverId" | "driverName" | "driverAvatar" | "rating" | "verified">,
@@ -57,6 +59,8 @@ const defaultUser: User = {
   rating: 4.8,
   ridesTaken: 24,
   ridesOffered: 0,
+  moneySaved: 0,
+  co2Saved: 0,
   role: "USER",
 };
 
@@ -82,7 +86,20 @@ export const useAppStore = create<State>()(
           // Fetch profile
           const profile = await apiFetch("/users/me").catch(() => null);
           if (profile) {
-            set({ user: { ...defaultUser, ...profile, name: profile.full_name, phone: profile.phone_number || "", avatar: profile.avatar_url || "", driverStatus: profile.driver_status || "none" } });
+            set({ 
+              user: { 
+                ...defaultUser, 
+                ...profile, 
+                name: profile.full_name, 
+                phone: profile.phone_number || "", 
+                avatar: profile.avatar_url || "", 
+                driverStatus: profile.driver_status || "none",
+                ridesTaken: profile.rides_taken ?? 0,
+                ridesOffered: profile.rides_offered ?? 0,
+                moneySaved: profile.money_saved ?? 0,
+                co2Saved: profile.co2_saved ?? 0
+              } 
+            });
           } else {
             set({ user: { ...defaultUser, email, phone: "" } }); // Fallback for dev
           }
@@ -125,7 +142,24 @@ export const useAppStore = create<State>()(
         try {
           const profile = await apiFetch("/users/me").catch(() => null);
           if (profile) {
-            set({ user: { ...defaultUser, ...profile, name: profile.full_name, phone: profile.phone_number || "", avatar: profile.avatar_url || "", driverStatus: profile.driver_status || "none" } });
+            set({ 
+              user: { 
+                ...defaultUser, 
+                ...profile, 
+                name: profile.full_name, 
+                phone: profile.phone_number || "", 
+                avatar: profile.avatar_url || "", 
+                driverStatus: profile.driver_status || "none",
+                ridesTaken: profile.rides_taken ?? 0,
+                ridesOffered: profile.rides_offered ?? 0,
+                moneySaved: profile.money_saved ?? 0,
+                co2Saved: profile.co2_saved ?? 0
+              } 
+            });
+          }
+          const dbBookings = await apiFetch("/bookings").catch(() => null);
+          if (dbBookings) {
+            set({ bookings: dbBookings });
           }
         } catch (e) {
           // Ignore
@@ -134,14 +168,23 @@ export const useAppStore = create<State>()(
       updateProfile: (patch) =>
         set((s) => ({ user: s.user ? { ...s.user, ...patch } : s.user })),
 
-      bookRide: (ride) =>
-        set((s) => ({
-          bookings: [
-            { id: `b_${Date.now()}`, rideId: ride.id, ride, status: "upcoming", bookedAt: new Date().toISOString().slice(0, 10) },
-            ...s.bookings,
-          ],
-          user: s.user ? { ...s.user, ridesTaken: s.user.ridesTaken + 1 } : s.user,
-        })),
+      bookRide: async (ride, couponCode) => {
+        try {
+          await apiFetch("/bookings", {
+            method: "POST",
+            body: JSON.stringify({ ride_id: ride.id, coupon_code: couponCode })
+          });
+          const dbBookings = await apiFetch("/bookings").catch(() => null);
+          if (dbBookings) {
+            set((s) => ({
+              bookings: dbBookings,
+              user: s.user ? { ...s.user, ridesTaken: s.user.ridesTaken + 1 } : s.user,
+            }));
+          }
+        } catch (e) {
+          throw e;
+        }
+      },
       cancelBooking: (bookingId) =>
         set((s) => ({
           bookings: s.bookings.map((b) => (b.id === bookingId ? { ...b, status: "cancelled" } : b)),

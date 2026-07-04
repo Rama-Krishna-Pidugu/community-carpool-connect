@@ -58,7 +58,9 @@ export function RideCard({ ride, onBook }: { ride: Ride; onBook?: (r: Ride) => v
               <p className="text-2xl font-bold text-foreground">₹{ride.price}</p>
             </div>
             {onBook && (
-              <Button onClick={() => onBook(ride)} className="shrink-0">Book ride</Button>
+              <Button onClick={() => onBook(ride)} disabled={ride.seats === 0} className="shrink-0">
+                {ride.seats === 0 ? "Full" : "Book ride"}
+              </Button>
             )}
           </div>
         </div>

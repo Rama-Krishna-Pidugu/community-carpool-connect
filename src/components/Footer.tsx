@@ -12,10 +12,7 @@ export function Footer() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-4 lg:px-8">
         <div className="lg:col-span-2">
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
-              <Car className="h-5 w-5" />
-            </span>
-            <span className="text-lg font-bold tracking-tight">Neighbourly</span>
+            <img src="/neighbourly_logo_v3_navbar.svg" alt="Neighbourly Logo" className="h-9 w-auto" />
           </Link>
           <p className="mt-4 max-w-sm text-sm text-muted-foreground">
             A trusted carpooling platform for neighbourhoods. Share rides, save money, and build a greener community together.

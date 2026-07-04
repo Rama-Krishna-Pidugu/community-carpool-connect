@@ -461,7 +461,6 @@ function AdminPage() {
             {/* Admin Profile dropdown */}
             <div className="flex items-center gap-2 border-l border-slate-200 pl-4 dark:border-slate-800">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="https://i.pravatar.cc/120?img=12" />
                 <AvatarFallback>AM</AvatarFallback>
               </Avatar>
               <div className="hidden flex-col text-left sm:flex">
@@ -766,7 +765,6 @@ function AdminPage() {
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9">
-                                  <AvatarImage src={`https://i.pravatar.cc/120?img=${parseInt(u.id.substring(2)) || 10}`} />
                                   <AvatarFallback>{u.name[0]}</AvatarFallback>
                                 </Avatar>
                                 <div>

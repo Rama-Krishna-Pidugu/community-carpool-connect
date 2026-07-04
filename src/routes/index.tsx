@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Leaf, Lock, Search, ShieldCheck, Sparkles, Users, Car, MapPin } from "lucide-react";
 import heroImg from "@/assets/hero-carpool.png";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,23 @@ import { FeatureCard } from "@/components/FeatureCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { testimonials } from "@/lib/mock-data";
+import { useAppStore } from "@/lib/store";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   component: LandingPage,
 });
 
 function LandingPage() {
+  const user = useAppStore((s) => s.user);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate({ to: "/dashboard" });
+    }
+  }, [user, navigate]);
+
   return (
     <div>
       {/* Hero */}
@@ -32,10 +43,7 @@ function LandingPage() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg" className="gap-2">
-                <Link to="/find-ride"><Search className="h-4 w-4" />Find a Ride</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="gap-2">
-                <Link to="/offer-ride"><Car className="h-4 w-4" />Offer a Ride</Link>
+                <Link to="/auth">Get Started <ArrowRight className="h-4 w-4" /></Link>
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-6 pt-2 text-sm text-muted-foreground">

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BadgeCheck, Car, Mail, Phone, Star, Users, Wallet } from "lucide-react";
+import { BadgeCheck, Car, Mail, Phone, Star, Users, Wallet, Leaf } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { toast } from "sonner";
 
@@ -92,7 +92,8 @@ function ProfilePage() {
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-1">
           <StatCard icon={Car} tone="primary" label="Rides taken" value={String(user.ridesTaken)} />
           <StatCard icon={Users} tone="secondary" label="Rides offered" value={String(user.ridesOffered)} />
-          <StatCard icon={Wallet} tone="accent" label="Money saved" value={`₹${user.ridesTaken * 45}`} />
+          <StatCard icon={Wallet} tone="accent" label="Money saved" value={`₹${user.moneySaved || 0}`} />
+          <StatCard icon={Leaf} tone="secondary" label="CO₂ saved" value={`${user.co2Saved || 0}kg`} />
         </div>
       </div>
 

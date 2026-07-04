@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Calendar, Clock, MapPin, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,8 +11,10 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { Ride } from "@/lib/mock-data";
 import emptyImg from "@/assets/empty-state.png";
+import { apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/find-ride")({
   head: () => ({ meta: [{ title: "Find a Ride — Neighbourly" }, { name: "description", content: "Search verified rides in your neighbourhood and book a seat in under a minute." }] }),
@@ -20,7 +22,6 @@ export const Route = createFileRoute("/find-ride")({
 });
 
 function FindRide() {
-  const rides = useAppStore((s) => s.rides);
   const bookRide = useAppStore((s) => s.bookRide);
   const user = useAppStore((s) => s.user);
 
@@ -29,22 +30,89 @@ function FindRide() {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [selected, setSelected] = useState<Ride | null>(null);
+  const [results, setResults] = useState<Ride[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [selectedCoupon, setSelectedCoupon] = useState<any>(null);
 
-  const results = useMemo(() => rides.filter((r) => {
-    const p = pickup.trim().toLowerCase();
-    const d = destination.trim().toLowerCase();
-    if (p && !r.pickup.toLowerCase().includes(p)) return false;
-    if (d && !r.destination.toLowerCase().includes(d)) return false;
-    if (date && r.date !== date) return false;
-    return true;
-  }), [rides, pickup, destination, date]);
+  useEffect(() => {
+    if (selected && user) {
+      apiFetch("/rewards/my-coupons")
+        .then((data: any) => {
+          setCoupons(data.available || []);
+          setSelectedCoupon(null);
+        })
+        .catch(() => {
+          setCoupons([]);
+        });
+    }
+  }, [selected, user]);
 
-  const handleBook = () => {
+  const fetchRides = async (pVal = "", dVal = "") => {
+    try {
+      setLoading(true);
+      let url = "/rides";
+      const params = new URLSearchParams();
+      if (pVal.trim()) params.append("origin", pVal.trim());
+      if (dVal.trim()) params.append("destination", dVal.trim());
+      
+      const queryString = params.toString();
+      if (queryString) url += `?${queryString}`;
+
+      const data = await apiFetch(url);
+      
+      // Map backend schema to frontend Ride schema
+      const mapped = data.map((r: any) => {
+        const depTime = new Date(r.departure_time);
+        const dateStr = depTime.toLocaleDateString("en-IN", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
+        const timeStr = depTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+        
+        return {
+          id: r.ride_id,
+          driverId: r.driver_id,
+          driverName: r.driver_name || "Verified Driver",
+          driverAvatar: r.driver_avatar || undefined,
+          rating: r.rating || 4.9,
+          vehicle: r.vehicle_info || "Verified Vehicle",
+          pickup: r.pickup_address,
+          destination: r.destination_address,
+          date: dateStr,
+          time: timeStr,
+          seats: r.available_seats,
+          price: r.price_per_seat,
+          verified: true
+        };
+      });
+
+      // Filter by date client-side if selected
+      const filtered = date ? mapped.filter((r: any) => r.date === date) : mapped;
+      setResults(filtered);
+    } catch (err) {
+      toast.error("Failed to retrieve matching rides.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRides();
+  }, [date]); // Re-fetch or filter when date changes
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchRides(pickup, destination);
+  };
+
+  const handleBook = async () => {
     if (!selected) return;
     if (!user) { toast.error("Please sign in to book a ride."); return; }
-    bookRide(selected);
-    toast.success("Ride booked! See it in My Bookings.");
-    setSelected(null);
+    try {
+      await bookRide(selected, selectedCoupon?.coupon_code);
+      toast.success("Ride booked! See it in My Bookings.");
+      setSelected(null);
+    } catch (err) {
+      toast.error("Failed to book this ride. Check if you already booked it.");
+    }
   };
 
   return (
@@ -56,7 +124,7 @@ function FindRide() {
 
       <Card className="mt-6">
         <CardContent className="p-5">
-          <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto] md:items-end">
+          <form onSubmit={handleSearch} className="grid gap-3 md:grid-cols-[1fr_1fr_auto_auto_auto] md:items-end">
             <div className="space-y-1.5">
               <Label htmlFor="pickup">Pickup</Label>
               <div className="relative">
@@ -85,8 +153,11 @@ function FindRide() {
                 <Input id="time" type="time" value={time} onChange={(e) => setTime(e.target.value)} className="pl-9" />
               </div>
             </div>
-            <Button size="lg" className="gap-2"><Search className="h-4 w-4" />Search</Button>
-          </div>
+            <Button type="submit" disabled={loading} size="lg" className="gap-2">
+              <Search className="h-4 w-4" />
+              {loading ? "Searching..." : "Search"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -115,12 +186,57 @@ function FindRide() {
             <DialogDescription>Review the ride details before booking.</DialogDescription>
           </DialogHeader>
           {selected && (
-            <div className="space-y-3 rounded-xl border border-border bg-surface p-4 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span className="font-medium">{selected.driverName}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span className="text-right font-medium">{selected.pickup} → {selected.destination}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Date &amp; time</span><span className="font-medium">{selected.date} · {selected.time}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Vehicle</span><span className="font-medium">{selected.vehicle}</span></div>
-              <div className="flex justify-between border-t border-border pt-3"><span className="text-muted-foreground">Total</span><span className="text-lg font-bold text-primary">₹{selected.price}</span></div>
+            <div className="space-y-4">
+              <div className="space-y-3 rounded-xl border border-border bg-surface p-4 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Driver</span><span className="font-medium">{selected.driverName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span className="text-right font-medium">{selected.pickup} → {selected.destination}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Date &amp; time</span><span className="font-medium">{selected.date} · {selected.time}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Vehicle</span><span className="font-medium">{selected.vehicle}</span></div>
+                
+                {selectedCoupon && (
+                  <div className="flex justify-between text-xs text-emerald-600 font-medium">
+                    <span>Discount ({selectedCoupon.discount_value}%)</span>
+                    <span>-₹{(selected.price * selectedCoupon.discount_value / 100).toFixed(0)}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between border-t border-border pt-3">
+                  <span className="text-muted-foreground font-semibold">Total</span>
+                  <span className="text-lg font-bold text-primary">
+                    ₹{selectedCoupon ? (selected.price - (selected.price * selectedCoupon.discount_value / 100)).toFixed(0) : selected.price}
+                  </span>
+                </div>
+              </div>
+
+              {/* Coupon Selection */}
+              {coupons.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="coupon-select" className="text-xs font-bold text-slate-700">Apply Reward Coupon</Label>
+                  <Select
+                    value={selectedCoupon?.coupon_code || "none"}
+                    onValueChange={(val) => {
+                      if (val === "none") {
+                        setSelectedCoupon(null);
+                      } else {
+                        const cop = coupons.find(c => c.coupon_code === val);
+                        setSelectedCoupon(cop || null);
+                      }
+                    }}
+                  >
+                    <SelectTrigger id="coupon-select" className="w-full">
+                      <SelectValue placeholder="Select a coupon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Do not apply coupon</SelectItem>
+                      {coupons.map((c) => (
+                        <SelectItem key={c.id} value={c.coupon_code}>
+                          🎁 {c.coupon_code} - {c.discount_value}% OFF (Expires {c.expiry_date})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>

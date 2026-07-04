@@ -4,16 +4,18 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Search, Car, Calendar, ShieldAlert } from "lucide-react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Navbar } from "../components/Navbar";
 import { Footer } from "../components/Footer";
 import { Toaster } from "../components/ui/sonner";
+import { useAppStore } from "../lib/store";
 
 function NotFoundComponent() {
   return (
@@ -32,7 +34,6 @@ function NotFoundComponent() {
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
-  useEffect(() => { reportLovableError(error, { boundary: "tanstack_root_error_component" }); }, [error]);
   return (
     <div className="flex min-h-[70vh] items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -61,8 +62,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Neighbourly — Share rides with your neighbourhood" },
       { name: "twitter:description", content: "A trusted neighbourhood carpooling platform. Share rides, save money, and build community with verified drivers in your locality." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/04ccd326-327c-4c92-9be9-607f3aef3f33/id-preview-24d5622e--6f53ce58-a8b3-46a6-9e67-156fbdbe166c.lovable.app-1783016441420.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/04ccd326-327c-4c92-9be9-607f3aef3f33/id-preview-24d5622e--6f53ce58-a8b3-46a6-9e67-156fbdbe166c.lovable.app-1783016441420.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -87,15 +86,89 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function BottomNav() {
+  const user = useAppStore((s) => s.user);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  if (!user || pathname === "/auth" || pathname.startsWith("/admin")) return null;
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 h-16 bg-background/95 backdrop-blur border-t border-border/60 md:hidden flex items-center justify-around px-4 shadow-[0_-2px_10px_rgba(0,0,0,0.03)] pb-safe">
+      <Link 
+        to="/find-ride" 
+        className="flex flex-col items-center justify-center w-20 h-full text-muted-foreground transition-colors hover:text-primary"
+        activeProps={{ className: "flex flex-col items-center justify-center w-20 h-full text-primary font-semibold" }}
+      >
+        <Search className="h-5 w-5 mb-0.5" />
+        <span className="text-[10px] tracking-tight">Find Ride</span>
+      </Link>
+      <Link 
+        to="/offer-ride" 
+        className="flex flex-col items-center justify-center w-20 h-full text-muted-foreground transition-colors hover:text-primary"
+        activeProps={{ className: "flex flex-col items-center justify-center w-20 h-full text-primary font-semibold" }}
+      >
+        <Car className="h-5 w-5 mb-0.5" />
+        <span className="text-[10px] tracking-tight">Offer Ride</span>
+      </Link>
+      <Link 
+        to="/bookings" 
+        className="flex flex-col items-center justify-center w-20 h-full text-muted-foreground transition-colors hover:text-primary"
+        activeProps={{ className: "flex flex-col items-center justify-center w-20 h-full text-primary font-semibold" }}
+      >
+        <Calendar className="h-5 w-5 mb-0.5" />
+        <span className="text-[10px] tracking-tight">My Bookings</span>
+      </Link>
+    </div>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const user = useAppStore((s) => s.user);
+  const logout = useAppStore((s) => s.logout);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  if (user && user.role === "ADMIN" && isMobile) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-6 text-center">
+          <div className="max-w-md space-y-5">
+            <div className="inline-grid h-14 w-14 place-items-center rounded-2xl bg-destructive/10 text-destructive">
+              <ShieldAlert className="h-7 w-7" />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight">Desktop Screen Required</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              The Admin Dashboard is optimized for larger displays and is not accessible on mobile screens. Please log in on a desktop computer.
+            </p>
+            <button 
+              onClick={() => logout()} 
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-destructive px-5 text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 transition-colors"
+            >
+              Log out
+            </button>
+          </div>
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex min-h-screen flex-col bg-background pb-16 md:pb-0">
         <Navbar />
         <main className="flex-1">
           <Outlet />
         </main>
+        <BottomNav />
         <Footer />
         <Toaster />
       </div>

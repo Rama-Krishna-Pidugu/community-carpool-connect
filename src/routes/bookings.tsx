@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,14 @@ export const Route = createFileRoute("/bookings")({
 function BookingsPage() {
   const bookings = useAppStore((s) => s.bookings);
   const cancelBooking = useAppStore((s) => s.cancelBooking);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  
   const [detail, setDetail] = useState<Booking | null>(null);
   const [confirmCancel, setConfirmCancel] = useState<string | null>(null);
+
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   const groups = {
     upcoming: bookings.filter((b) => b.status === "upcoming"),

@@ -52,6 +52,17 @@ function VerificationPage() {
     refreshProfile();
   }, [refreshProfile]);
 
+  useEffect(() => {
+    if (user) {
+      setPersonal((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name || "",
+        phone: prev.phone || (user.phone === "+91 98000 12345" ? "" : user.phone) || "",
+        email: prev.email || user.email || ""
+      }));
+    }
+  }, [user]);
+
   // Form Field States
   const [personal, setPersonal] = useState({
     fullName: user?.name ?? "",

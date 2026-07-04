@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerificationRouteImport } from './routes/verification'
+import { Route as RewardsRouteImport } from './routes/rewards'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OfferRideRouteImport } from './routes/offer-ride'
 import { Route as FindRideRouteImport } from './routes/find-ride'
@@ -22,6 +23,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const VerificationRoute = VerificationRouteImport.update({
   id: '/verification',
   path: '/verification',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RewardsRoute = RewardsRouteImport.update({
+  id: '/rewards',
+  path: '/rewards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/find-ride': typeof FindRideRoute
   '/offer-ride': typeof OfferRideRoute
   '/profile': typeof ProfileRoute
+  '/rewards': typeof RewardsRoute
   '/verification': typeof VerificationRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/find-ride': typeof FindRideRoute
   '/offer-ride': typeof OfferRideRoute
   '/profile': typeof ProfileRoute
+  '/rewards': typeof RewardsRoute
   '/verification': typeof VerificationRoute
 }
 export interface FileRoutesById {
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/find-ride': typeof FindRideRoute
   '/offer-ride': typeof OfferRideRoute
   '/profile': typeof ProfileRoute
+  '/rewards': typeof RewardsRoute
   '/verification': typeof VerificationRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +119,7 @@ export interface FileRouteTypes {
     | '/find-ride'
     | '/offer-ride'
     | '/profile'
+    | '/rewards'
     | '/verification'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/find-ride'
     | '/offer-ride'
     | '/profile'
+    | '/rewards'
     | '/verification'
   id:
     | '__root__'
@@ -132,6 +143,7 @@ export interface FileRouteTypes {
     | '/find-ride'
     | '/offer-ride'
     | '/profile'
+    | '/rewards'
     | '/verification'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +156,7 @@ export interface RootRouteChildren {
   FindRideRoute: typeof FindRideRoute
   OfferRideRoute: typeof OfferRideRoute
   ProfileRoute: typeof ProfileRoute
+  RewardsRoute: typeof RewardsRoute
   VerificationRoute: typeof VerificationRoute
 }
 
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/verification'
       fullPath: '/verification'
       preLoaderRoute: typeof VerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rewards': {
+      id: '/rewards'
+      path: '/rewards'
+      fullPath: '/rewards'
+      preLoaderRoute: typeof RewardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -224,6 +244,7 @@ const rootRouteChildren: RootRouteChildren = {
   FindRideRoute: FindRideRoute,
   OfferRideRoute: OfferRideRoute,
   ProfileRoute: ProfileRoute,
+  RewardsRoute: RewardsRoute,
   VerificationRoute: VerificationRoute,
 }
 export const routeTree = rootRouteImport
