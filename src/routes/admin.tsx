@@ -130,10 +130,11 @@ const revenueData = [
 ];
 
 function AdminPage() {
+  const user = useAppStore((s) => s.user);
   // Navigation & Theme
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [currentRole, setCurrentRole] = useState<AdminRole>("Super Admin");
+  const currentRole = "Admin";
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   // Mock State Managers
@@ -167,7 +168,7 @@ function AdminPage() {
   const [notifChannel, setNotifChannel] = useState("push");
   const [notifMessage, setNotifMessage] = useState("");
 
-  const permissions = ROLE_PERMISSIONS[currentRole];
+  const permissions = ROLE_PERMISSIONS["Super Admin"];
 
   // Fetch Verification Submissions (API-backed fallback or mock fallback)
   const fetchDrivers = async () => {
@@ -234,7 +235,7 @@ function AdminPage() {
       // Fallback local mock update
       setDrivers(prev => prev.map(d => d.driver_id === id ? { ...d, verification_status: "VERIFIED" } : d));
       setAuditLogsList(prev => [
-        { admin: `${currentRole} (Alex Morgan)`, action: `Approved driver profile ${name}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `Driver: ${name}` },
+        { admin: user?.name || "Admin", action: `Approved driver profile ${name}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `Driver: ${name}` },
         ...prev
       ]);
       toast.success(`Driver ${name} approved (Simulated Local System)`);
@@ -261,7 +262,7 @@ function AdminPage() {
       // Mock fallback update
       setDrivers(prev => prev.map(d => d.driver_id === rejecting.driver_id ? { ...d, verification_status: "REJECTED" } : d));
       setAuditLogsList(prev => [
-        { admin: `${currentRole} (Alex Morgan)`, action: `Rejected driver profile ${name} - Reason: ${feedback || "Blurs"}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `Driver: ${name}` },
+        { admin: user?.name || "Admin", action: `Rejected driver profile ${name} - Reason: ${feedback || "Blurs"}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `Driver: ${name}` },
         ...prev
       ]);
       toast.success(`Driver ${name} rejected (Simulated Local System)`);
@@ -279,7 +280,7 @@ function AdminPage() {
     const nextStatus = currentStatus === "Active" ? "Suspended" : "Active";
     setUsersList(prev => prev.map(u => u.id === userId ? { ...u, status: nextStatus } : u));
     setAuditLogsList(prev => [
-      { admin: `${currentRole} (Alex Morgan)`, action: `${nextStatus === "Suspended" ? "Suspended" : "Activated"} user ${name}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `User: ${name}` },
+      { admin: user?.name || "Admin", action: `${nextStatus === "Suspended" ? "Suspended" : "Activated"} user ${name}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `User: ${name}` },
       ...prev
     ]);
     toast.success(`User ${name} has been ${nextStatus === "Suspended" ? "suspended" : "reactivated"}.`);
@@ -301,7 +302,7 @@ function AdminPage() {
       return;
     }
     setComplaintsList(prev => prev.map(c => c.id === id ? { ...c, priority: "High", status: "Assigned" } : c));
-    toast.warn(`Complaint Ticket #${id} escalated to High priority Support.`);
+    toast.warning(`Complaint Ticket #${id} escalated to High priority Support.`);
   };
 
   // SOS Emergency Alert Dispatch
@@ -323,7 +324,7 @@ function AdminPage() {
     }
     toast.success(`Campaign launched! Transmitting ${notifChannel.toUpperCase()} to ${notifTarget.toUpperCase()}`);
     setAuditLogsList(prev => [
-      { admin: `${currentRole} (Alex Morgan)`, action: `Sent broadcast notification to ${notifTarget}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `Notification: ${notifMessage.substring(0, 20)}...` },
+      { admin: user?.name || "Admin", action: `Sent broadcast notification to ${notifTarget}`, time: new Date().toISOString().replace('T', ' ').substring(0, 16), ip: "192.168.1.104", resource: `Notification: ${notifMessage.substring(0, 20)}...` },
       ...prev
     ]);
     setNotifMessage("");
@@ -374,13 +375,9 @@ function AdminPage() {
             { id: "verification", label: "Driver Verification", Icon: CheckSquare, badge: drivers.filter(d => d.verification_status === "PENDING").length },
             { id: "users", label: "User Management", Icon: Users },
             { id: "vehicles", label: "Vehicle Verification", Icon: Car },
-            { id: "rides", label: "Ride Monitoring", Icon: Activity },
             { id: "complaints", label: "Complaints", Icon: AlertTriangle, badge: complaintsList.filter(c => c.status === "Open").length },
             { id: "sos", label: "SOS Alerts", Icon: ShieldAlert, badge: sosList.length, badgeColor: "bg-red-600" },
             { id: "payments", label: "Payments", Icon: CreditCard },
-            { id: "analytics", label: "Analytics", Icon: TrendingUp },
-            { id: "notifications", label: "Notifications", Icon: Bell },
-            { id: "reports", label: "Reports & Export", Icon: FileText },
             { id: "audit", label: "Audit Logs", Icon: ClipboardList },
             { id: "settings", label: "System Settings", Icon: Settings },
           ].map((item) => {
@@ -443,29 +440,19 @@ function AdminPage() {
               {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
             </button>
 
-            {/* Role Switcher Selector */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-medium">Role:</span>
-              <select
-                value={currentRole}
-                onChange={(e) => setCurrentRole(e.target.value as AdminRole)}
-                className="h-9 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold focus:outline-none dark:border-slate-800 dark:bg-slate-950"
-              >
-                <option value="Super Admin">Super Admin</option>
-                <option value="Verification Officer">Verification Officer</option>
-                <option value="Support Staff">Support Staff</option>
-                <option value="Analytics Viewer">Analytics Viewer</option>
-              </select>
-            </div>
-
             {/* Admin Profile dropdown */}
             <div className="flex items-center gap-2 border-l border-slate-200 pl-4 dark:border-slate-800">
               <Avatar className="h-8 w-8">
-                <AvatarFallback>AM</AvatarFallback>
+                {user?.avatar ? (
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                ) : null}
+                <AvatarFallback>
+                  {user?.name ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "AD"}
+                </AvatarFallback>
               </Avatar>
               <div className="hidden flex-col text-left sm:flex">
-                <span className="text-xs font-semibold">Alex Morgan</span>
-                <span className="text-3xs text-slate-400">{currentRole}</span>
+                <span className="text-xs font-semibold">{user?.name || "Admin"}</span>
+                <span className="text-3xs text-slate-400">Admin</span>
               </div>
             </div>
           </div>
@@ -498,7 +485,6 @@ function AdminPage() {
                   <h1 className="text-2xl font-bold tracking-tight">Welcome back, Admin</h1>
                   <p className="text-sm text-slate-500">Here's your platforms status report for today.</p>
                 </div>
-                <Button size="sm" onClick={() => handleExportData("CSV")} className="gap-1.5 bg-blue-600 hover:bg-blue-700"><Download className="h-4 w-4" />Export CSV</Button>
               </div>
 
               {/* KPI cards layout */}
@@ -788,7 +774,7 @@ function AdminPage() {
                             <td className="px-6 py-4 text-xs text-slate-400">{u.date}</td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <Button size="2xs" variant="outline" onClick={() => toggleUserStatus(u.id, u.status, u.name)}>
+                                <Button size="sm" variant="outline" onClick={() => toggleUserStatus(u.id, u.status, u.name)}>
                                   {u.status === "Active" ? <Lock className="h-3 w-3 text-amber-600" /> : <Unlock className="h-3 w-3 text-emerald-600" />}
                                   <span className="ml-1">{u.status === "Active" ? "Suspend" : "Activate"}</span>
                                 </Button>
@@ -829,9 +815,9 @@ function AdminPage() {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button size="xs" variant="outline" className="gap-1.5" onClick={() => setExpandedImage("https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=500")}><FileText className="h-3.5 w-3.5" />View RC</Button>
+                      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setExpandedImage("https://images.unsplash.com/photo-1506015391300-4802dc74de2e?w=500")}><FileText className="h-3.5 w-3.5" />View RC</Button>
                       {v.status === "Pending" && (
-                        <Button size="xs" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
                           setVehiclesList(prev => prev.map(item => item.id === v.id ? { ...item, status: "Verified" } : item));
                           toast.success(`Vehicle ${v.number} approved.`);
                         }}>Approve Fit</Button>
@@ -843,46 +829,7 @@ function AdminPage() {
             </div>
           )}
 
-          {/* VIEW: RIDE MONITORING */}
-          {activeTab === "rides" && (
-            <div className="space-y-6 animate-fade-in">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Active Ride Monitoring</h1>
-                <p className="text-sm text-slate-500">Live carpool telemetry tracking. Intervene in case of route deviances or SOS triggers.</p>
-              </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-4">
-                  {ridesList.map((r) => (
-                    <Card key={r.id} className="p-4 border border-slate-200 dark:border-slate-800">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <span className="text-xs text-blue-500 font-bold">Ride ID: {r.id}</span>
-                          <h4 className="font-semibold text-sm">Driver: {r.driver}</h4>
-                        </div>
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-3xs font-semibold ${r.status === "Started" ? "bg-blue-50 text-blue-700" : r.status === "Completed" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-                          {r.status}
-                        </span>
-                      </div>
-                      <div className="space-y-1 text-xs text-slate-500">
-                        <div className="flex gap-2"><MapPin className="h-3.5 w-3.5 text-slate-400" /> <span>Pickup: {r.pickup}</span></div>
-                        <div className="flex gap-2"><MapPin className="h-3.5 w-3.5 text-blue-500" /> <span>Drop: {r.drop}</span></div>
-                        <div className="flex gap-2 mt-2 pt-2 border-t dark:border-slate-800"><Activity className="h-3.5 w-3.5 text-amber-500" /> <span>Telemetry: {r.location}</span></div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Tracking Simulation Screen */}
-                <Card className="flex flex-col items-center justify-center p-6 bg-slate-900 text-white rounded-xl h-[420px] relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] [background-size:16px_16px] opacity-35" />
-                  <Map className="h-12 w-12 text-blue-400 mb-3 animate-pulse" />
-                  <h3 className="font-bold text-lg mb-1">Live Track Console</h3>
-                  <p className="text-xs text-slate-400 max-w-xs text-center">Select an active trip on the left to initialize real-time vector map tracking.</p>
-                </Card>
-              </div>
-            </div>
-          )}
 
           {/* VIEW: COMPLAINTS */}
           {activeTab === "complaints" && (
@@ -908,8 +855,8 @@ function AdminPage() {
 
                       {c.status !== "Resolved" && (
                         <div className="flex gap-2">
-                          <Button size="xs" variant="outline" onClick={() => handleEscalateComplaint(c.id)}>Escalate</Button>
-                          <Button size="xs" className="bg-blue-600 hover:bg-blue-700" onClick={() => handleResolveComplaint(c.id)}>Resolve Ticket</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleEscalateComplaint(c.id)}>Escalate</Button>
+                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => handleResolveComplaint(c.id)}>Resolve Ticket</Button>
                         </div>
                       )}
                     </div>
@@ -994,7 +941,7 @@ function AdminPage() {
                 <Card className="p-4">
                   <span className="text-xs text-slate-500">Pending Driver Cashouts</span>
                   <h3 className="text-2xl font-bold mt-1">₹12,450</h3>
-                  <Button size="2xs" className="mt-2 bg-blue-600 hover:bg-blue-700">Disburse Payouts</Button>
+                  <Button size="sm" className="mt-2 bg-blue-600 hover:bg-blue-700">Disburse Payouts</Button>
                 </Card>
               </div>
 
@@ -1034,132 +981,7 @@ function AdminPage() {
             </div>
           )}
 
-          {/* VIEW: ANALYTICS */}
-          {activeTab === "analytics" && (
-            <div className="space-y-6 animate-fade-in">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Platform Performance Analytics</h1>
-                <p className="text-sm text-slate-500">Explore usage metrics, weekly active metrics, and peak traffic periods.</p>
-              </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
-                <Card>
-                  <CardHeader><CardTitle className="text-sm font-semibold">Rides Success Rate vs Cancellation Rate</CardTitle></CardHeader>
-                  <CardContent className="h-72">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={rideData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="Rides" stroke="#3b82f6" strokeWidth={2} activeDot={{ r: 8 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card className="p-6 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-semibold text-sm text-slate-500 mb-4">Core Operating Ratios</h3>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1"><span>Average Trip Distance</span> <span>12.4 Km</span></div>
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-blue-600 rounded-full" style={{ width: "65%" }} /></div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1"><span>Car Seat Occupancy Efficiency</span> <span>78%</span></div>
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-emerald-600 rounded-full" style={{ width: "78%" }} /></div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-xs font-semibold mb-1"><span>Ride Completion Rate</span> <span>94.2%</span></div>
-                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full"><div className="h-full bg-indigo-600 rounded-full" style={{ width: "94.2%" }} /></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-2xs text-slate-400 mt-4">Metrics refreshed hourly using CloudWatch analytics logs.</div>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {/* VIEW: NOTIFICATIONS */}
-          {activeTab === "notifications" && (
-            <div className="space-y-6 animate-fade-in">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">System Notification Center</h1>
-                <p className="text-sm text-slate-500">Launch marketing campaigns or safety updates to platform members via Push, SES, or SNS.</p>
-              </div>
-
-              <Card className="max-w-2xl">
-                <CardHeader><CardTitle className="text-sm font-semibold">Broadcast Campaign Builder</CardTitle></CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSendNotification} className="space-y-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold">Recipient Target Audience</label>
-                        <select value={notifTarget} onChange={(e) => setNotifTarget(e.target.value)} className="w-full h-10 rounded border bg-white px-3 py-1 text-sm dark:border-slate-800 dark:bg-slate-950">
-                          <option value="all">All Platform Users</option>
-                          <option value="drivers">Verified Drivers Only</option>
-                          <option value="riders">Carpool Passengers Only</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-semibold">Delivery Protocol Channel</label>
-                        <select value={notifChannel} onChange={(e) => setNotifChannel(e.target.value)} className="w-full h-10 rounded border bg-white px-3 py-1 text-sm dark:border-slate-800 dark:bg-slate-950">
-                          <option value="push">Mobile Push Notification</option>
-                          <option value="email">Amazon SES (Email)</option>
-                          <option value="sms">Amazon SNS (SMS)</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-xs font-semibold">Message Content</label>
-                      <Textarea
-                        placeholder="Type notification text here... e.g. Safety Tip: Always check the driver photo matches the license plate."
-                        value={notifMessage}
-                        onChange={(e) => setNotifMessage(e.target.value)}
-                        rows={4}
-                      />
-                    </div>
-
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700 gap-1.5"><Send className="h-4 w-4" />Transmit Notification</Button>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* VIEW: REPORTS */}
-          {activeTab === "reports" && (
-            <div className="space-y-6 animate-fade-in">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Reports Generator</h1>
-                <p className="text-sm text-slate-500">Compile operations summaries, driver lists, and revenue logs for accounting.</p>
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-3">
-                {[
-                  { title: "Daily Activity Summary", desc: "Covers today's trips, bookings, and cancellations count." },
-                  { title: "Driver Verification Roll", desc: "List of newly verified and rejected driver profiles." },
-                  { title: "Monthly Payout Summary", desc: "Gross platform cashout reports for accounting." },
-                ].map((rep, i) => (
-                  <Card key={i} className="p-5 flex flex-col justify-between">
-                    <div>
-                      <h4 className="font-bold text-sm mb-1">{rep.title}</h4>
-                      <p className="text-xs text-slate-400">{rep.desc}</p>
-                    </div>
-                    <div className="flex gap-2 mt-4 pt-4 border-t dark:border-slate-800">
-                      <Button size="2xs" variant="outline" className="flex-1" onClick={() => handleExportData("PDF")}>PDF</Button>
-                      <Button size="2xs" variant="outline" className="flex-1" onClick={() => handleExportData("CSV")}>CSV</Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* VIEW: AUDIT LOGS */}
           {activeTab === "audit" && (
@@ -1169,7 +991,6 @@ function AdminPage() {
                   <h1 className="text-2xl font-bold tracking-tight">Audit Logs</h1>
                   <p className="text-sm text-slate-500">Complete traceability record of administrative actions on the platform.</p>
                 </div>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleExportData("CSV")}><Download className="h-4 w-4" />Download CSV Log</Button>
               </div>
 
               <Card>

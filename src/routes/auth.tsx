@@ -238,24 +238,126 @@ function AuthPage() {
 
 function ForgotPasswordDialog() {
   const [open, setOpen] = useState(false);
+  const [step, setStep] = useState<"request" | "reset">("request");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const forgotPassword = useAppStore((s) => s.forgotPassword);
+  const resetPassword = useAppStore((s) => s.resetPassword);
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setIsLoading(true);
+    try {
+      await forgotPassword(email);
+      toast.success("OTP sent to your email!");
+      setStep("reset");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send reset OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || !newPassword) return;
+    setIsLoading(true);
+    try {
+      await resetPassword(email, otp, newPassword);
+      toast.success("Password reset successfully! You can now log in.");
+      setOpen(false);
+      // reset states
+      setStep("request");
+      setEmail("");
+      setOtp("");
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to reset password");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(val) => {
+      setOpen(val);
+      if (!val) {
+        setStep("request");
+      }
+    }}>
       <DialogTrigger asChild>
         <button type="button" className="text-xs font-medium text-primary hover:underline">Forgot password?</button>
       </DialogTrigger>
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Reset your password</DialogTitle>
-          <DialogDescription>Enter your email and we'll send you a reset link.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="fp-email">Email</Label>
-          <Input id="fp-email" type="email" placeholder="you@example.com" />
-        </div>
-        <DialogFooter>
-          <Button onClick={() => { toast.success("Reset link sent"); setOpen(false); }}>Send reset link</Button>
-        </DialogFooter>
+        {step === "request" ? (
+          <form onSubmit={handleSendOtp} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Reset your password</DialogTitle>
+              <DialogDescription>Enter your email and we'll send you an OTP code to verify your identity.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="fp-email">Email</Label>
+              <Input 
+                id="fp-email" 
+                type="email" 
+                placeholder="you@example.com" 
+                required 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Sending..." : "Send Verification Code"}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Enter Verification Code</DialogTitle>
+              <DialogDescription>Enter the OTP code from your email and your new password.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fp-otp">Confirmation Code</Label>
+                <Input 
+                  id="fp-otp" 
+                  type="text" 
+                  placeholder="123456" 
+                  required 
+                  value={otp} 
+                  onChange={(e) => setOtp(e.target.value)} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fp-password">New Password</Label>
+                <Input 
+                  id="fp-password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  required 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)} 
+                />
+              </div>
+            </div>
+            <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" onClick={() => setStep("request")} className="w-full sm:w-auto">
+                Back
+              </Button>
+              <Button type="submit" disabled={isLoading} className="w-full sm:w-auto flex-1">
+                {isLoading ? "Resetting..." : "Reset Password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
+

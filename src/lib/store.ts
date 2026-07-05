@@ -36,6 +36,8 @@ type State = {
   logout: () => void;
   register: (name: string, email: string, password?: string, phone?: string) => Promise<void>;
   confirmOTP: (email: string, otp: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (email: string, otp: string, newPassword?: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   updateProfile: (patch: Partial<User>) => void;
   bookRide: (ride: Ride, couponCode?: string) => Promise<void>;
@@ -135,6 +137,30 @@ export const useAppStore = create<State>()(
           await apiFetch("/auth/confirm", {
             method: "POST",
             body: JSON.stringify({ email, otp })
+          });
+        } catch (e) {
+          throw e;
+        }
+      },
+      forgotPassword: async (email) => {
+        try {
+          await apiFetch("/auth/forgot-password", {
+            method: "POST",
+            body: JSON.stringify({ email })
+          });
+        } catch (e) {
+          throw e;
+        }
+      },
+      resetPassword: async (email, otp, newPassword) => {
+        try {
+          await apiFetch("/auth/reset-password", {
+            method: "POST",
+            body: JSON.stringify({
+              email,
+              otp,
+              new_password: newPassword
+            })
           });
         } catch (e) {
           throw e;

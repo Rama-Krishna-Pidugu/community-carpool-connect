@@ -367,8 +367,8 @@ function VerificationPage() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   // File Validation Wrappers
-  const handleLicenseUpload = async (url: string, file: File | undefined) => {
-    if (!file) return;
+  const handleLicenseUpload = async (url: string | undefined, file: File | undefined) => {
+    if (!url || !file) return;
     const check = validateFileUpload(file, [".jpeg", ".jpg", ".png", ".pdf"], 10);
     if (!check.isValid) {
       setErrors(prev => ({ ...prev, licenseFile: check.message }));
@@ -380,8 +380,8 @@ function VerificationPage() {
     setDocFiles(prev => ({ ...prev, license: file }));
   };
 
-  const handleRcUpload = async (url: string, file: File | undefined) => {
-    if (!file) return;
+  const handleRcUpload = async (url: string | undefined, file: File | undefined) => {
+    if (!url || !file) return;
     const check = validateFileUpload(file, [".jpeg", ".jpg", ".png", ".pdf"], 10);
     if (!check.isValid) {
       setErrors(prev => ({ ...prev, rcFile: check.message }));
@@ -393,8 +393,8 @@ function VerificationPage() {
     setDocFiles(prev => ({ ...prev, rc: file }));
   };
 
-  const handleInsuranceUpload = async (url: string, file: File | undefined) => {
-    if (!file) return;
+  const handleInsuranceUpload = async (url: string | undefined, file: File | undefined) => {
+    if (!url || !file) return;
     const check = validateFileUpload(file, [".jpeg", ".jpg", ".png", ".pdf"], 10);
     if (!check.isValid) {
       setErrors(prev => ({ ...prev, insuranceFile: check.message }));
@@ -406,8 +406,8 @@ function VerificationPage() {
     setDocFiles(prev => ({ ...prev, insurance: file }));
   };
 
-  const handleGovIdUpload = async (url: string, file: File | undefined) => {
-    if (!file) return;
+  const handleGovIdUpload = async (url: string | undefined, file: File | undefined) => {
+    if (!url || !file) return;
     const check = validateFileUpload(file, [".jpeg", ".jpg", ".png", ".pdf"], 10);
     if (!check.isValid) {
       setErrors(prev => ({ ...prev, govIdFile: check.message }));
@@ -419,8 +419,8 @@ function VerificationPage() {
     setDocFiles(prev => ({ ...prev, govId: file }));
   };
 
-  const handleSelfieUpload = async (url: string, file: File | undefined) => {
-    if (!file) return;
+  const handleSelfieUpload = async (url: string | undefined, file: File | undefined) => {
+    if (!url || !file) return;
     const typeCheck = validateFileUpload(file, [".jpeg", ".jpg", ".png", ".webp"], 5);
     if (!typeCheck.isValid) {
       setErrors(prev => ({ ...prev, selfieFile: typeCheck.message }));

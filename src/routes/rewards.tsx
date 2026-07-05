@@ -43,7 +43,7 @@ function RewardsPage() {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const data = await apiFetch<CouponsResponse>("/rewards/my-coupons");
+      const data = await apiFetch("/rewards/my-coupons") as CouponsResponse;
       setCoupons(data);
     } catch (e: any) {
       toast.error(e.message || "Failed to load rewards");

@@ -42,7 +42,7 @@ function Dashboard() {
         .catch(() => toast.error("Failed to load your offered rides"))
         .finally(() => setLoadingOffered(false));
     }
-  }, [user?.driverStatus, user?.user_id]);
+  }, [user?.driverStatus, user?.id]);
 
   const handleCompleteRide = async (rideId: string) => {
     try {
