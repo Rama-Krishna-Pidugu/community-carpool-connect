@@ -55,18 +55,18 @@ function FindRide() {
       const params = new URLSearchParams();
       if (pVal.trim()) params.append("origin", pVal.trim());
       if (dVal.trim()) params.append("destination", dVal.trim());
-      
+
       const queryString = params.toString();
       if (queryString) url += `?${queryString}`;
 
       const data = await apiFetch(url);
-      
+
       // Map backend schema to frontend Ride schema
       const mapped = data.map((r: any) => {
         const depTime = new Date(r.departure_time);
         const dateStr = depTime.toLocaleDateString("en-IN", { year: "numeric", month: "2-digit", day: "2-digit" }).split("/").reverse().join("-");
         const timeStr = depTime.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
-        
+
         return {
           id: r.ride_id,
           driverId: r.driver_id,
@@ -192,14 +192,14 @@ function FindRide() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span className="text-right font-medium">{selected.pickup} → {selected.destination}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Date &amp; time</span><span className="font-medium">{selected.date} · {selected.time}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Vehicle</span><span className="font-medium">{selected.vehicle}</span></div>
-                
+
                 {selectedCoupon && (
                   <div className="flex justify-between text-xs text-emerald-600 font-medium">
                     <span>Discount ({selectedCoupon.discount_value}%)</span>
                     <span>-₹{(selected.price * selectedCoupon.discount_value / 100).toFixed(0)}</span>
                   </div>
                 )}
-                
+
                 <div className="flex justify-between border-t border-border pt-3">
                   <span className="text-muted-foreground font-semibold">Total</span>
                   <span className="text-lg font-bold text-primary">

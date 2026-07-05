@@ -27,7 +27,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  if (pathname === "/auth" || pathname.startsWith("/admin")) return null;
+  if (pathname === "/" || pathname === "/auth" || pathname.startsWith("/admin")) return null;
 
   const handleLogout = () => {
     logout();

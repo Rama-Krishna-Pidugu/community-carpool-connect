@@ -1,9 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
-  seedBookings,
-  seedRides,
-  seedVerificationQueue,
   type Booking,
   type Ride,
   type VerificationSubmission,
@@ -51,15 +48,15 @@ type State = {
 };
 
 const defaultUser: User = {
-  id: "u1",
-  name: "Alex Morgan",
-  email: "alex@neighbourly.app",
+  id: "",
+  name: "",
+  email: "",
   phone: "",
   avatar: "",
-  joinedAt: "2026-01-12",
+  joinedAt: new Date().toISOString().slice(0, 10),
   driverStatus: "none",
-  rating: 4.8,
-  ridesTaken: 24,
+  rating: 5.0,
+  ridesTaken: 0,
   ridesOffered: 0,
   moneySaved: 0,
   co2Saved: 0,
@@ -72,9 +69,9 @@ export const useAppStore = create<State>()(
   persist(
     (set, get) => ({
       user: null,
-      rides: seedRides,
-      bookings: seedBookings,
-      verificationQueue: seedVerificationQueue,
+      rides: [],
+      bookings: [],
+      verificationQueue: [],
 
       login: async (email, password) => {
         try {
